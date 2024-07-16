@@ -10,24 +10,28 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-wasm-bindgen = "0.2.78"
+wasm-bindgen = { version = "0.2.92", features = ["serde-serialize"] }
+wasm-bindgen-futures = "0.4.42"
+js-sys = "0.3.69"
 console_error_panic_hook = "0.1.7"
 rand = "0.8.4"
 getrandom = { version = "0.2.3", features = ["js"] }
+futures = "0.3.30"
+anyhow = "1.0.86"
+async-trait = "0.1.81"
+serde = { version = "1.0.204", features = ["derive"] }
 
 [dependencies.web-sys]
-version = "0.3.55"
+version = "0.3.69"
 features = [
   "console",
   "Window",
   "Document",
   "HtmlCanvasElement",
   "CanvasRenderingContext2d",
-  "Element"
+  "Element",
+  "HtmlImageElement"
 ]
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.28"
-futures = "0.3.18"
-js-sys = "0.3.55"
-wasm-bindgen-futures = "0.4.28"
+wasm-bindgen-test = "0.3.42"
