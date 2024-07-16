@@ -18,6 +18,8 @@ export default function Index() {
     <div className="font-sans p-4">
       <h1 className="text-3xl">Welcome to Remix</h1>
       <button onClick={() => greet()}> greet </button>
+
+      <canvas id="canvas" width={600} height={600} />
     </div>
   );
 }
