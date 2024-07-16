@@ -1,5 +1,5 @@
 import type { MetaFunction } from "@remix-run/node";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import init, { greet } from "walk-the-dog-core";
 
 export const meta: MetaFunction = () => {
@@ -10,9 +10,14 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Index() {
+  const initialized = useRef<boolean>(false);
+
   useEffect(() => {
-    init();
-  }, []);
+    if (!initialized.current) {
+      init();
+      initialized.current = true;
+    }
+  }, [initialized]);
 
   return (
     <div className="font-sans p-4">
