@@ -1,6 +1,22 @@
 [package]
-name = "core"
+name = "walk-the-dog-core"
+description = ""
+repository = ""
+license = ""
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+crate-type = ["cdylib"]
+
 [dependencies]
+wasm-bindgen = "0.2.78"
+
+[dependencies.web-sys]
+version = "0.3.55"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.28"
+futures = "0.3.18"
+js-sys = "0.3.55"
+wasm-bindgen-futures = "0.4.28"
