@@ -1,8 +1,28 @@
 use rand::prelude::*;
+use serde::Deserialize;
+use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Mutex;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
+
+#[derive(Deserialize)]
+struct Sheet {
+    frames: HashMap<String, Cell>,
+}
+
+#[derive(Deserialize)]
+struct Rect {
+    x: u16,
+    y: u16,
+    w: u16,
+    h: u16,
+}
+
+#[derive(Deserialize)]
+struct Cell {
+    frame: Rect,
+}
 
 #[wasm_bindgen]
 extern "C" {
@@ -39,7 +59,7 @@ pub fn main_js() -> Result<(), JsValue> {
         let error_tx = Rc::clone(&success_tx);
 
         let image = web_sys::HtmlImageElement::new().unwrap();
-        image.set_src("assets/resized/rhb/Idle (1).png");
+        image.set_src("assets/sprite_sheets/rhb.png");
 
         let callback = Closure::once(move || {
             if let Some(tx) = success_tx.lock().ok().and_then(|mut opt| opt.take()) {
@@ -56,8 +76,26 @@ pub fn main_js() -> Result<(), JsValue> {
         image.set_onerror(Some(error_callback.as_ref().unchecked_ref()));
         callback.forget();
 
+        let json = fetch_json("assets/sprite_sheets/rhb.json")
+            .await
+            .expect("Could not fetch rhb.json");
+        let sheet: Sheet = json
+            .into_serde()
+            .expect("Could not convert rhb.json into a Sheet structure");
+
         success_rx.await;
-        let _ = context.draw_image_with_html_image_element(&image, 0.0, 0.0);
+        let sprite = sheet.frames.get("Run (1).png").expect("Cell not found");
+        let _ = context.draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
+            &image,
+            sprite.frame.x.into(),
+            sprite.frame.y.into(),
+            sprite.frame.w.into(),
+            sprite.frame.h.into(),
+            300.0,
+            300.0,
+            sprite.frame.w.into(),
+            sprite.frame.h.into(),
+        );
     });
 
     Ok(())
