@@ -15,4 +15,9 @@ export default defineConfig({
     }),
     tsconfigPaths(),
   ],
+  server: {
+    fs: {
+      allow: [".", "../core"],
+    },
+  },
 });
