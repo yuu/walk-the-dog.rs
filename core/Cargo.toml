@@ -31,7 +31,8 @@ features = [
   "CanvasRenderingContext2d",
   "Element",
   "HtmlImageElement",
-  "Response"
+  "Response",
+  "Performance"
 ]
 
 [dev-dependencies]
