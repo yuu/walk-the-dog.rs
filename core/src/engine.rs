@@ -1,6 +1,7 @@
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
+use futures::channel::mpsc;
 use futures::channel::oneshot::channel;
 use serde::Deserialize;
 use std::cell::RefCell;
@@ -12,6 +13,7 @@ use wasm_bindgen::JsValue;
 use web_sys::console::log;
 use web_sys::CanvasRenderingContext2d;
 use web_sys::HtmlImageElement;
+use web_sys::KeyboardEvent;
 
 use crate::browser;
 use crate::browser::LoopClosure;
@@ -19,6 +21,11 @@ use crate::browser::LoopClosure;
 const FRAME_SIZE: f32 = 1.0 / 60.0 * 1000.0;
 
 type SharedLoopClosure = Rc<RefCell<Option<LoopClosure>>>;
+
+enum KeyPress {
+    KeyUp(web_sys::KeyboardEvent),
+    KeyDown(web_sys::KeyboardEvent),
+}
 
 macro_rules! log {
     ( $($t:tt)* ) => {
@@ -42,6 +49,12 @@ struct SheetRect {
     h: i16,
 }
 
+#[derive(Clone, Copy)]
+pub struct Point {
+    pub x: i16,
+    pub y: i16,
+}
+
 #[derive(Deserialize)]
 struct Cell {
     frame: SheetRect,
@@ -55,7 +68,7 @@ pub struct Sheet {
 #[async_trait(?Send)]
 pub trait Game {
     async fn initialize(&self) -> Result<Box<dyn Game>>;
-    fn update(&mut self);
+    fn update(&mut self, keystate: &KeyState);
     fn draw(&self, renderer: &Renderer);
 }
 
@@ -63,6 +76,7 @@ pub struct WalkTheDog {
     image: Option<HtmlImageElement>,
     sheet: Option<Sheet>,
     frame: u8,
+    position: Point,
 }
 
 impl WalkTheDog {
@@ -71,6 +85,7 @@ impl WalkTheDog {
             image: None,
             sheet: None,
             frame: 0,
+            position: Point { x: 0, y: 0 },
         }
     }
 }
@@ -88,10 +103,28 @@ impl Game for WalkTheDog {
             image: Some(image),
             sheet: Some(sheet),
             frame: self.frame,
+            position: self.position,
         }))
     }
 
-    fn update(&mut self) {
+    fn update(&mut self, keystate: &KeyState) {
+        let mut velocity = Point { x: 0, y: 0 };
+        if keystate.is_pressed("ArrowDown") {
+            velocity.y += 3;
+        }
+        if keystate.is_pressed("ArrowUp") {
+            velocity.y -= 3;
+        }
+        if keystate.is_pressed("ArrowRight") {
+            velocity.x += 3;
+        }
+        if keystate.is_pressed("ArrowLeft") {
+            velocity.x -= 3;
+        }
+
+        self.position.x += velocity.x;
+        self.position.y += velocity.y;
+
         if self.frame < 23 {
             self.frame += 1;
         } else {
@@ -125,8 +158,8 @@ impl Game for WalkTheDog {
                     h: sprite.frame.h.into(),
                 },
                 &Rect {
-                    x: 300.0,
-                    y: 300.0,
+                    x: self.position.x.into(),
+                    y: self.position.y.into(),
                     w: sprite.frame.w.into(),
                     h: sprite.frame.h.into(),
                 },
@@ -142,6 +175,7 @@ pub struct GameLoop {
 
 impl GameLoop {
     pub async fn start(mut game: impl Game + 'static) -> Result<()> {
+        let mut keyevent_rx = prepare_input()?;
         let mut game = game.initialize().await?;
 
         let mut game_loop = GameLoop {
@@ -156,10 +190,13 @@ impl GameLoop {
         let f: SharedLoopClosure = Rc::new(RefCell::new(None));
         let g = f.clone();
 
+        let mut keystate = KeyState::new();
+
         *g.borrow_mut() = Some(browser::create_ref_closure(move |perf: f64| {
+            process_input(&mut keystate, &mut keyevent_rx);
             game_loop.accumulated_delta += (perf - game_loop.last_frame) as f32;
             while game_loop.accumulated_delta > FRAME_SIZE {
-                game.update();
+                game.update(&keystate);
                 game_loop.accumulated_delta -= FRAME_SIZE;
             }
             game_loop.last_frame = perf;
@@ -228,4 +265,67 @@ pub async fn load_image(source: &str) -> Result<HtmlImageElement> {
     let _ = success_rx.await??;
 
     Ok(image)
+}
+
+pub struct KeyState {
+    pressed_keys: HashMap<String, web_sys::KeyboardEvent>,
+}
+
+impl KeyState {
+    fn new() -> Self {
+        KeyState {
+            pressed_keys: HashMap::new(),
+        }
+    }
+
+    pub fn is_pressed(&self, code: &str) -> bool {
+        self.pressed_keys.contains_key(code)
+    }
+
+    pub fn set_pressed(&mut self, code: &str, ev: web_sys::KeyboardEvent) {
+        self.pressed_keys.insert(code.into(), ev);
+    }
+
+    pub fn set_released(&mut self, code: &str) {
+        self.pressed_keys.remove(code.into());
+    }
+}
+
+type KeyEventChannel = (
+    mpsc::UnboundedSender<KeyPress>,
+    mpsc::UnboundedReceiver<KeyPress>,
+);
+
+fn prepare_input() -> Result<mpsc::UnboundedReceiver<KeyPress>> {
+    let (tx, rx): KeyEventChannel = mpsc::unbounded();
+    let keydown_tx = Rc::new(RefCell::new(tx));
+    let keyup_tx = Rc::clone(&keydown_tx);
+    let on_keydown = browser::closure_wrap(Box::new(move |keycode: web_sys::KeyboardEvent| {
+        let _ = keydown_tx
+            .borrow_mut()
+            .start_send(KeyPress::KeyDown(keycode));
+    }) as Box<dyn FnMut(web_sys::KeyboardEvent)>);
+    let on_keyup = browser::closure_wrap(Box::new(move |keycode: web_sys::KeyboardEvent| {
+        let _ = keyup_tx.borrow_mut().start_send(KeyPress::KeyUp(keycode));
+    }) as Box<dyn FnMut(web_sys::KeyboardEvent)>);
+
+    browser::window()?.set_onkeydown(Some(on_keydown.as_ref().unchecked_ref()));
+    browser::window()?.set_onkeyup(Some(on_keyup.as_ref().unchecked_ref()));
+    on_keydown.forget();
+    on_keyup.forget();
+
+    Ok(rx)
+}
+
+fn process_input(state: &mut KeyState, keyevent_rx: &mut mpsc::UnboundedReceiver<KeyPress>) {
+    loop {
+        match keyevent_rx.try_next() {
+            Ok(None) => break,
+            Err(_err) => break,
+            Ok(Some(ev)) => match ev {
+                KeyPress::KeyUp(ev) => state.set_released(&ev.code()),
+                KeyPress::KeyDown(ev) => state.set_pressed(&ev.code(), ev),
+            },
+        }
+    }
 }

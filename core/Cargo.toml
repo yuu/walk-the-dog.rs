@@ -32,7 +32,8 @@ features = [
   "Element",
   "HtmlImageElement",
   "Response",
-  "Performance"
+  "Performance",
+  "KeyboardEvent"
 ]
 
 [dev-dependencies]
