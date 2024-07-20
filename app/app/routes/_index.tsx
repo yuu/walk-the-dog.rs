@@ -1,6 +1,6 @@
 import type { MetaFunction } from "@remix-run/node";
 import { useEffect, useRef } from "react";
-import init, { greet } from "walk-the-dog-core";
+import init from "walk-the-dog-core";
 
 export const meta: MetaFunction = () => {
   return [
@@ -22,8 +22,6 @@ export default function Index() {
   return (
     <div className="font-sans p-4">
       <h1 className="text-3xl">Welcome to Remix</h1>
-      <button onClick={() => greet()}> greet </button>
-
       <canvas id="canvas" width={600} height={600} />
     </div>
   );

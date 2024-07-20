@@ -1,17 +1,12 @@
-use anyhow::anyhow;
-use anyhow::Result;
-use futures::Future;
-use wasm_bindgen::closure::WasmClosure;
-use wasm_bindgen::closure::WasmClosureFnOnce;
-use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
+use anyhow::{anyhow, Result};
+use std::future::Future;
+use wasm_bindgen::{
+    closure::WasmClosure, closure::WasmClosureFnOnce, prelude::Closure, JsCast, JsValue,
+};
 use wasm_bindgen_futures::JsFuture;
-use web_sys::CanvasRenderingContext2d;
-use web_sys::Document;
-use web_sys::HtmlCanvasElement;
-use web_sys::HtmlImageElement;
-use web_sys::Response;
-use web_sys::Window;
+use web_sys::{
+    CanvasRenderingContext2d, Document, HtmlCanvasElement, HtmlImageElement, Response, Window,
+};
 
 macro_rules! log {
     ( $($t:tt)* ) => {
