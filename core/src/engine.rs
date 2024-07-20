@@ -83,9 +83,10 @@ impl WalkTheDog {
 #[async_trait(?Send)]
 impl Game for WalkTheDog {
     async fn initialize(&self) -> Result<Box<dyn Game>> {
-        let sheet: Sheet = browser::fetch_json("assets/sprite_sheets/rhb.json")
-            .await?
-            .into_serde()?;
+        let sheet: Sheet = serde_wasm_bindgen::from_value(
+            browser::fetch_json("assets/sprite_sheets/rhb.json").await?,
+        )
+        .expect("rhb.json seed require");
 
         let image = load_image("assets/sprite_sheets/rhb.png").await?;
 
