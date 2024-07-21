@@ -84,6 +84,7 @@ impl Rect {
 
 pub struct Renderer {
     context: CanvasRenderingContext2d,
+    show_bounding_box: bool,
 }
 
 impl Renderer {
@@ -117,6 +118,20 @@ impl Renderer {
             .draw_image_with_html_image_element(image, position.x.into(), position.y.into())
             .expect("Drawing is throwing exceptions! Unrecoverable error.");
     }
+
+    pub fn draw_bounding_box(&self, rect: &Rect) {
+        if self.show_bounding_box == false {
+            return;
+        }
+
+        self.context.set_stroke_style(&JsValue::from("#f00"));
+        self.context.stroke_rect(
+            rect.x() as f64,
+            rect.y() as f64,
+            rect.width as f64,
+            rect.height as f64,
+        );
+    }
 }
 
 pub struct Image {
@@ -140,7 +155,8 @@ impl Image {
     }
 
     pub fn draw(&self, renderer: &Renderer) {
-        renderer.draw_entire_image(&self.element, &self.position)
+        renderer.draw_entire_image(&self.element, &self.position);
+        renderer.draw_bounding_box(&self.bounding_box());
     }
 
     pub fn bounding_box(&self) -> &Rect {
@@ -201,6 +217,7 @@ impl GameLoop {
 
         let renderer = Renderer {
             context: browser::context()?,
+            show_bounding_box: true,
         };
 
         let f: SharedLoopClosure = Rc::new(RefCell::new(None));

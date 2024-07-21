@@ -110,6 +110,7 @@ impl RedHatBoy {
             ),
             &self.destination_box(),
         );
+        renderer.draw_bounding_box(&self.bounding_box());
     }
 }
 
@@ -681,7 +682,9 @@ impl Platform {
                 platform.frame.h.into(),
             ),
             &self.bounding_box(),
-        )
+        );
+
+        renderer.draw_bounding_box(&self.bounding_box());
     }
 
     fn bounding_box(&self) -> Rect {
