@@ -22,7 +22,7 @@ export default function Index() {
   return (
     <div className="font-sans p-4">
       <h1 className="text-3xl">Welcome to Remix</h1>
-      <canvas id="canvas" width={600} height={600} />
+      <canvas id="canvas" width={1200} height={600} />
     </div>
   );
 }

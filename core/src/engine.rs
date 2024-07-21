@@ -16,7 +16,7 @@ pub struct SheetRect {
     pub h: i16,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct Point {
     pub x: i16,
     pub y: i16,
@@ -34,20 +34,51 @@ pub struct Sheet {
     pub frames: HashMap<String, Cell>,
 }
 
-#[derive(Deserialize)]
+#[derive(Default)]
 pub struct Rect {
-    pub x: f32,
-    pub y: f32,
-    pub width: f32,
-    pub height: f32,
+    pub position: Point,
+    pub width: i16,
+    pub height: i16,
 }
 
 impl Rect {
+    pub const fn new(position: Point, width: i16, height: i16) -> Self {
+        Rect {
+            position,
+            width,
+            height,
+        }
+    }
+
+    pub const fn new_from_x_y(x: i16, y: i16, width: i16, height: i16) -> Self {
+        Rect::new(Point { x, y }, width, height)
+    }
+
     pub fn intersects(&self, rect: &Rect) -> bool {
-        self.x < (rect.x + rect.width)
-            && self.x + self.width > rect.x
-            && self.y < (rect.y + rect.height)
-            && self.y + self.height > rect.y
+        self.x() < rect.right()
+            && self.right() > rect.x()
+            && self.y() < rect.bottom()
+            && self.bottom() > rect.y()
+    }
+
+    pub fn right(&self) -> i16 {
+        self.x() + self.width
+    }
+
+    pub fn bottom(&self) -> i16 {
+        self.y() + self.height
+    }
+
+    pub fn set_x(&mut self, x: i16) {
+        self.position.x = x
+    }
+
+    pub fn x(&self) -> i16 {
+        self.position.x
+    }
+
+    pub fn y(&self) -> i16 {
+        self.position.y
     }
 }
 
@@ -58,8 +89,8 @@ pub struct Renderer {
 impl Renderer {
     pub fn clear(&self, rect: &Rect) {
         self.context.clear_rect(
-            rect.x.into(),
-            rect.y.into(),
+            rect.x().into(),
+            rect.y().into(),
             rect.width.into(),
             rect.height.into(),
         );
@@ -69,12 +100,12 @@ impl Renderer {
         self.context
             .draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
                 &image,
-                frame.x.into(),
-                frame.y.into(),
+                frame.x().into(),
+                frame.y().into(),
                 frame.width.into(),
                 frame.height.into(),
-                destination.x.into(),
-                destination.y.into(),
+                destination.x().into(),
+                destination.y().into(),
                 destination.width.into(),
                 destination.height.into(),
             )
@@ -97,10 +128,9 @@ pub struct Image {
 impl Image {
     pub fn new(element: HtmlImageElement, position: Point) -> Self {
         let bounding_box = Rect {
-            x: position.x.into(),
-            y: position.y.into(),
-            width: element.width() as f32,
-            height: element.height() as f32,
+            position,
+            width: element.width() as i16,
+            height: element.height() as i16,
         };
         Self {
             element,
