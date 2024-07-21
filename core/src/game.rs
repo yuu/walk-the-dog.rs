@@ -76,7 +76,7 @@ impl RedHatBoy {
     fn bounding_box(&self) -> Rect {
         const X_OFFSET: i16 = 18;
         const Y_OFFSET: i16 = 14;
-        const WIDTH_OFFSET: i16 = 28;
+        const WIDTH_OFFSET: i16 = 56;
 
         Rect::new_from_x_y(
             self.destination_box().x() + X_OFFSET,
@@ -617,15 +617,13 @@ impl Game for WalkTheDog {
 
             walk.boy.update();
 
-            if walk
-                .boy
-                .bounding_box()
-                .intersects(&walk.platform.bounding_box())
-            {
-                if walk.boy.velocity_y() > 0 && walk.boy.pos_y() < walk.platform.position.y {
-                    walk.boy.land_on(walk.platform.bounding_box().y());
-                } else {
-                    walk.boy.knock_out();
+            for bounding_box in &walk.platform.bounding_boxes() {
+                if walk.boy.bounding_box().intersects(bounding_box) {
+                    if walk.boy.velocity_y() > 0 && walk.boy.pos_y() < walk.platform.position.y {
+                        walk.boy.land_on(bounding_box.position.y);
+                    } else {
+                        walk.boy.knock_out();
+                    }
                 }
             }
 
@@ -681,13 +679,15 @@ impl Platform {
                 (platform.frame.w * 3).into(),
                 platform.frame.h.into(),
             ),
-            &self.bounding_box(),
+            &&self.destination_box(),
         );
 
-        renderer.draw_bounding_box(&self.bounding_box());
+        for x in self.bounding_boxes() {
+            renderer.draw_bounding_box(&x);
+        }
     }
 
-    fn bounding_box(&self) -> Rect {
+    fn destination_box(&self) -> Rect {
         let platform = self
             .sheet
             .frames
@@ -700,5 +700,32 @@ impl Platform {
             (platform.frame.w * 3).into(),
             platform.frame.h.into(),
         )
+    }
+
+    fn bounding_boxes(&self) -> Vec<Rect> {
+        const X_OFFSET: i16 = 60;
+        const END_HEIGHT: i16 = 54;
+        let destination_box = self.destination_box();
+
+        let bounding_box_one = Rect::new_from_x_y(
+            destination_box.position.x,
+            destination_box.position.y,
+            X_OFFSET,
+            END_HEIGHT,
+        );
+        let bounding_box_two = Rect::new_from_x_y(
+            destination_box.position.x + X_OFFSET,
+            destination_box.position.y,
+            destination_box.width - (X_OFFSET * 2),
+            destination_box.height,
+        );
+        let bounding_box_three = Rect::new_from_x_y(
+            destination_box.position.x + destination_box.width - X_OFFSET,
+            destination_box.position.y,
+            X_OFFSET,
+            END_HEIGHT,
+        );
+
+        vec![bounding_box_one, bounding_box_two, bounding_box_three]
     }
 }
