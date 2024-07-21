@@ -9,6 +9,8 @@ use crate::{
 };
 
 const HEIGHT: i16 = 600;
+const LOW_PLATFORM: i16 = 420;
+const HIGH_PLATFORM: i16 = 375;
 
 pub struct RedHatBoy {
     state_machine: RedHatBoyStateMachine,
@@ -587,7 +589,10 @@ impl Game for WalkTheDog {
                 let platform = Platform::new(
                     platform_sheet,
                     engine::load_image("assets/sprite_sheets/tiles.png").await?,
-                    Point { x: 200, y: 400 },
+                    Point {
+                        x: 370,
+                        y: LOW_PLATFORM,
+                    },
                 );
 
                 Ok(Box::new(WalkTheDog::Loaded(Walk {
