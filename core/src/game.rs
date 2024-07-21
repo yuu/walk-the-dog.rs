@@ -9,6 +9,7 @@ use crate::{
 };
 
 const HEIGHT: i16 = 600;
+const WIDTH: i16 = 1200;
 const LOW_PLATFORM: i16 = 420;
 const HIGH_PLATFORM: i16 = 375;
 
@@ -76,15 +77,16 @@ impl RedHatBoy {
     }
 
     fn bounding_box(&self) -> Rect {
-        const X_OFFSET: i16 = 18;
+        const X_OFFSET: i16 = 56;
         const Y_OFFSET: i16 = 14;
-        const WIDTH_OFFSET: i16 = 56;
+        const WIDTH_OFFSET: i16 = 82;
+        let destination_box = self.destination_box();
 
         Rect::new_from_x_y(
-            self.destination_box().x() + X_OFFSET,
-            self.destination_box().y() + Y_OFFSET,
-            self.destination_box().width - WIDTH_OFFSET,
-            self.destination_box().height - Y_OFFSET,
+            destination_box.x() + X_OFFSET,
+            destination_box.y() + Y_OFFSET,
+            destination_box.width - WIDTH_OFFSET,
+            destination_box.height - Y_OFFSET,
         )
     }
 
@@ -591,7 +593,7 @@ impl Game for WalkTheDog {
                     engine::load_image("assets/sprite_sheets/tiles.png").await?,
                     Point {
                         x: 370,
-                        y: LOW_PLATFORM,
+                        y: HIGH_PLATFORM,
                     },
                 );
 
@@ -643,7 +645,7 @@ impl Game for WalkTheDog {
     }
 
     fn draw(&self, renderer: &Renderer) {
-        renderer.clear(&&Rect::new_from_x_y(0, 0, 1200, 600));
+        renderer.clear(&&Rect::new_from_x_y(0, 0, WIDTH, HEIGHT));
 
         if let WalkTheDog::Loaded(walk) = self {
             walk.background.draw(renderer);

@@ -16,7 +16,7 @@ pub struct SheetRect {
     pub h: i16,
 }
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Debug)]
 pub struct Point {
     pub x: i16,
     pub y: i16,
@@ -34,7 +34,7 @@ pub struct Sheet {
     pub frames: HashMap<String, Cell>,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Rect {
     pub position: Point,
     pub width: i16,
