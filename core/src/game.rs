@@ -8,6 +8,8 @@ use crate::{
     engine::{self, Cell, Game, Image, KeyState, Point, Rect, Renderer, Sheet},
 };
 
+const HEIGHT: i16 = 600;
+
 pub struct RedHatBoy {
     state_machine: RedHatBoyStateMachine,
     sprite_sheet: Sheet,
@@ -100,7 +102,7 @@ impl RedHatBoy {
 
         renderer.draw_image(
             &self.image,
-            &&Rect::new_from_x_y(
+            &Rect::new_from_x_y(
                 sprite.frame.x,
                 sprite.frame.y,
                 sprite.frame.w,
@@ -243,8 +245,6 @@ impl From<FallingEndState> for RedHatBoyStateMachine {
     }
 }
 
-const HEIGHT: i16 = 600;
-
 mod red_hat_boy_states {
     use super::HEIGHT;
     use crate::engine::Point;
@@ -257,7 +257,7 @@ mod red_hat_boy_states {
     const JUMPING_FRAMES: u8 = 35;
     const SLIDING_FRAMES: u8 = 14;
     const FALLING_FRAMES: u8 = 29;
-    const RUNNING_SPEED: i16 = 3;
+    const RUNNING_SPEED: i16 = 4;
     const IDLE_FRAME_NAME: &str = "Idle";
     const RUN_FRAME_NAME: &str = "Run";
     const SLIDING_FRAME_NAME: &str = "Slide";
@@ -529,6 +529,7 @@ mod red_hat_boy_states {
 
         fn stop(mut self) -> Self {
             self.velocity.x = 0;
+            self.velocity.y = 0;
             self
         }
 
@@ -591,7 +592,7 @@ impl Game for WalkTheDog {
                 Ok(Box::new(WalkTheDog::Loaded(Walk {
                     boy: rhb,
                     background: Image::new(background, Point { x: 0, y: 0 }),
-                    stone: Image::new(stone, Point { x: 200, y: 546 }),
+                    stone: Image::new(stone, Point { x: 150, y: 546 }),
                     platform,
                 })))
             }
